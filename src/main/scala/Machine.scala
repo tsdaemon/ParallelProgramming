@@ -4,7 +4,7 @@ package com.tsdaemon.homework3
   * Created by Anatoliy on 13.05.2017.
   */
 final class Machine {
-  def run(statement: Statement, env: Map[String, Any]): Map[String, Any] = {
+  def run(statement: Statement, env: Map[String, Expr]): Map[String, Expr] = {
     println(s"Running statement:\n$statement\nEnvironment:\n$env\n\n")
 
     statement match {
@@ -24,30 +24,24 @@ final class Machine {
     }
   }
 
-  def whileRun(cond: Expr, statement: Statement, env: Map[String, Any]):Map[String, Any] = reduce(cond, env) match {
+  def whileRun(cond: Expr, statement: Statement, env: Map[String, Expr]):Map[String, Expr] = reduce(cond, env) match {
     case Bool(b) =>
       if(b) run(WhileLoop(cond, statement), run(statement, env))
       else run(DoNothing, env)
     case _ => throw new Exception("While loop condition reduced not to Bool type")
   }
 
-  def ifElseRun(cond: Expr, ifSt: Statement, elseSt: Statement, env: Map[String, Any]): Map[String, Any] = cond match {
+  def ifElseRun(cond: Expr, ifSt: Statement, elseSt: Statement, env: Map[String, Expr]): Map[String, Expr] = cond match {
     case Bool(b) => if(b) run(ifSt, env) else run(elseSt, env)
     case _ => throw new Exception("Condition expression type is not Bool")
   }
 
-  def getValue(expr: Expr):Any = expr match {
-    case Bool(b) => b
-    case Integer(i) => i
-    case _ => throw new Exception("Can not get value of not reduced expression")
+  def assignRun(name: String, expr: Expr, env: Map[String, Expr]):Map[String, Expr] = {
+    if(env contains name) env - name + (name -> expr)
+    else env + (name -> expr)
   }
 
-  def assignRun(name: String, expr: Expr, env: Map[String, Any]):Map[String, Any] = {
-    if(env contains name) env - name + (name -> getValue(expr))
-    else env + (name -> getValue(expr))
-  }
-
-  def reduce(expr:Expr, env: Map[String, Any]):Expr = {
+  def reduce(expr:Expr, env: Map[String, Expr]):Expr = {
     println(s"Reducing: $expr")
 
     if(expr.isReduciable)
@@ -58,7 +52,7 @@ final class Machine {
     }
   }
 
-  def reductionStep(expr: Expr, env: Map[String, Any]): Expr = expr match {
+  def reductionStep(expr: Expr, env: Map[String, Expr]): Expr = expr match {
     case Sum(lOp, rOp) => reductionStepSum(lOp, rOp, env)
     case Prod(lOp, rOp) => reductionStepProd(lOp, rOp, env)
     case Var(name) => reductionStepVar(name, env)
@@ -66,7 +60,7 @@ final class Machine {
     case IfElse(c, lOp, rOp) => reductionStepIfElse(c, lOp, rOp, env)
   }
 
-  def reductionStepIfElse(c: Expr, ifExpr: Expr, elseExpr: Expr, env: Map[String, Any]) = {
+  def reductionStepIfElse(c: Expr, ifExpr: Expr, elseExpr: Expr, env: Map[String, Expr]) = {
     if(c.isReduciable) IfElse(reductionStep(c, env), ifExpr, elseExpr)
     else c match {
       case Bool(b) => if(b) ifExpr else elseExpr
@@ -74,7 +68,7 @@ final class Machine {
     }
   }
 
-  def reductionStepLess(lOp: Expr, rOp: Expr, env: Map[String, Any]) = {
+  def reductionStepLess(lOp: Expr, rOp: Expr, env: Map[String, Expr]) = {
     if (lOp.isReduciable) Less(reductionStep(lOp, env), rOp)
     else if(rOp.isReduciable) Less(lOp, reductionStep(rOp, env))
     else lOp match {
@@ -86,7 +80,7 @@ final class Machine {
     }
   }
 
-  def reductionStepSum(lOp:Expr, rOp:Expr, env: Map[String, Any]): Expr = {
+  def reductionStepSum(lOp:Expr, rOp:Expr, env: Map[String, Expr]): Expr = {
     if (lOp.isReduciable) Sum(reductionStep(lOp, env), rOp)
     else if(rOp.isReduciable) Sum(lOp, reductionStep(rOp, env))
     else lOp match {
@@ -98,7 +92,7 @@ final class Machine {
     }
   }
 
-  def reductionStepProd(lOp: Expr, rOp: Expr, env: Map[String, Any]) = {
+  def reductionStepProd(lOp: Expr, rOp: Expr, env: Map[String, Expr]) = {
     if (lOp.isReduciable) Prod(reductionStep(lOp, env), rOp)
     else if(rOp.isReduciable) Prod(lOp, reductionStep(rOp, env))
     else lOp match {
@@ -110,12 +104,8 @@ final class Machine {
     }
   }
 
-  def reductionStepVar(name: String, env: Map[String, Any]) = {
-    if(env.contains(name)) env(name) match {
-      case i:Int => Integer(i)
-      case b:Boolean => Bool(b)
-      case _ => throw new Exception(s"Variable $name type is unknown")
-    }
+  def reductionStepVar(name: String, env: Map[String, Expr]) = {
+    if(env.contains(name)) env(name)
     else throw new Exception(s"Variable $name is not defined")
   }
 }

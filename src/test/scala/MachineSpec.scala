@@ -54,9 +54,9 @@ class MachineSpec extends FlatSpec with Matchers {
 
 
   "expression with Var" should "be reduced to variable value from environment" in {
-    machine.reduce(Var("x"), Map[String,Any]("x" -> 2)) should be(Integer(2))
+    machine.reduce(Var("x"), Map[String,Expr]("x" -> Integer(2))) should be(Integer(2))
 
-    machine.reduce(Var("x"), Map[String,Any]("x" -> true)) should be(Bool(true))
+    machine.reduce(Var("x"), Map[String,Expr]("x" -> Bool(true))) should be(Bool(true))
   }
 
   "expression with Var" should "throw exception if no value in environment" in {
@@ -65,15 +65,15 @@ class MachineSpec extends FlatSpec with Matchers {
     }
   }
 
-  "expression with Var" should "throw exception if value in environment has unknown type" in {
-    intercept[Exception] {
-      machine.reduce(Var("x"), Map[String,Any]("x" -> "tralala"))
-    }
-  }
+//  "expression with Var" should "throw exception if value in environment has unknown type" in {
+//    intercept[Exception] {
+//      machine.reduce(Var("x"), Map[String,Expr]("x" -> "tralala"))
+//    }
+//  }
 
 
   "expression with Less" should "be reduced to Bool" in {
-    val env = Map[String,Any]("x" -> 3)
+    val env = Map[String,Expr]("x" -> Integer(3))
 
     machine.reduce(Less(Var("x"), Integer(2)), env) should be(Bool(false))
 
@@ -111,25 +111,25 @@ class MachineSpec extends FlatSpec with Matchers {
 
 
   "statement DoNothing" should "do nothing" in {
-    machine.run(DoNothing, env) should be(Map[String, Any]())
+    machine.run(DoNothing, env) should be(Map[String, Expr]())
   }
 
 
   "statement Assign" should "change variable value" in {
-    machine.run(Assign("x", Sum(Integer(2), Integer(2))), env) should be(Map[String, Any]("x" -> 4))
+    machine.run(Assign("x", Sum(Integer(2), Integer(2))), env) should be(Map[String, Expr]("x" -> Integer(4)))
 
-    machine.run(Assign("x", Prod(Integer(4), Var("x"))), Map[String, Any]("x" -> 4)) should be(Map[String, Any]("x" -> 16))
+    machine.run(Assign("x", Prod(Integer(4), Var("x"))), Map[String, Expr]("x" -> Integer(4))) should be(Map[String, Expr]("x" -> Integer(16)))
 
-    machine.run(Assign("x", Less(Integer(4), Var("x"))), Map[String, Any]("x" -> 16)) should be(Map[String, Any]("x" -> true))
+    machine.run(Assign("x", Less(Integer(4), Var("x"))), Map[String, Expr]("x" -> Integer(16))) should be(Map[String, Expr]("x" -> Bool(true)))
   }
 
 
   "statement IfElse" should "execute first statement if condition is true" in {
-    machine.run(IfElseStatement(Bool(true), Assign("x", Integer(1)), Assign("x", Integer(2))), env) should be (Map[String, Any]("x" -> 1))
+    machine.run(IfElseStatement(Bool(true), Assign("x", Integer(1)), Assign("x", Integer(2))), env) should be (Map[String, Expr]("x" -> Integer(1)))
   }
 
   "statement IfElse" should "execute second statement if condition is false" in {
-    machine.run(IfElseStatement(Bool(false), Assign("x", Integer(1)), Assign("x", Integer(2))), env) should be (Map[String, Any]("x" -> 2))
+    machine.run(IfElseStatement(Bool(false), Assign("x", Integer(1)), Assign("x", Integer(2))), env) should be (Map[String, Expr]("x" -> Integer(2)))
   }
 
   "statement IfElse" should "throw exception if condition type is not Bool" in {
@@ -144,7 +144,7 @@ class MachineSpec extends FlatSpec with Matchers {
                                                                     Assign("x", Sum(Var("x"), Integer(-1))),
                                                                     Assign("i", Sum(Var("i"), Integer(1)))
                                                                   ))),
-      Map[String, Any]("x" -> 0, "i" -> 1)) should be (Map[String, Any]("x"->(-2), "i"->3))
+      Map[String, Expr]("x" -> Integer(0), "i" -> Integer(1))) should be (Map[String, Expr]("x"->Integer(-2), "i"->Integer(3)))
   }
 
   "statement WhileLoop" should "throw exception is condition type is not Bool" in {
@@ -155,6 +155,6 @@ class MachineSpec extends FlatSpec with Matchers {
 
 
   "statement Block"  should "execute each statement in list" in {
-    machine.run(Block(List(Assign("x", Integer(3)), Assign("y", Bool(true)))), env) should be (Map[String, Any]("x"->3, "y"->true))
+    machine.run(Block(List(Assign("x", Integer(3)), Assign("y", Bool(true)))), env) should be (Map[String, Expr]("x"->Integer(3), "y"->Bool(true)))
   }
 }
