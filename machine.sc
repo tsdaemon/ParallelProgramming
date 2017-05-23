@@ -5,7 +5,7 @@ val env = Map[String,Expr](
   "x" -> Integer(1),
   "y" -> Integer(2))
 
-val machine = new Machine
+val machine = new ExpressionMachine
 
 machine.reduce(
   IfElse(
